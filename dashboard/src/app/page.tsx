@@ -1,3 +1,5 @@
+"use client";
+
 import EmotionBars from "@/components/EmotionBars";
 
 export default function Home() {
