@@ -1,29 +1,46 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import amqp from 'amqplib';
 
-const { RABBIT_URL = '' } = process.env;
-const QUEUE = 'emotions';
+const url  = process.env.RABBIT_URL!;        // amqps://ai:...@host:port//
+const caB64= process.env.RABBIT_CA!;         // base64-encoded cert
+const caBuf= Buffer.from(caB64, 'base64');
 
-let channel: amqp.Channel | null = null;
+let conn: amqp.Connection | undefined;
+let ch:   amqp.Channel     | undefined;
+
+function noHostnameCheck(_hostname: string, _cert: any) {
+  return null;                // ⬅️ disable alt-name validation only
+}
 
 async function getChannel() {
-  if (channel) return channel;
-  const conn = await amqp.connect(RABBIT_URL);
-  channel = await conn.createChannel();
-  await channel.assertQueue(QUEUE, { durable: true });
-  return channel;
+  if (ch) return ch;
+
+  conn = await amqp.connect(url, {
+    ca: [caBuf],             // trust our CA
+    servername: '',          // skip SNI, CN mismatch is OK
+    checkServerIdentity: noHostnameCheck
+    // if you prefer to disable validation entirely, add:
+    // rejectUnauthorized: false,
+  });
+
+  ch = await conn.createChannel();
+  await ch.assertQueue('emotions', { durable: true });
+  return ch;
 }
 
-export default async function handler(
-  _req: NextApiRequest,
-  res: NextApiResponse
-) {
-  const ch = await getChannel();
-  const msg = await ch.get(QUEUE, { noAck: false });
-  if (!msg) return res.status(204).end();          // no new data
+export default async function handler(_: VercelRequest, res: VercelResponse) {
+  console.log('Polling the queue');
+  const channel = await getChannel();
+  const msg = await channel.get('emotions', { noAck: false });
 
-  const json = JSON.parse(msg.content.toString());
-  ch.ack(msg);
-  res.status(200).json(json);
+  if (!msg) {
+    console.log("ℹ️ no message – queue empty");      // <-- LOG
+    return res.status(204).end();
+  }
+
+  const body = msg.content.toString('utf8');
+  channel.ack(msg);
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Cache-Control', 'no-store');
+  res.send(body);
 }
-

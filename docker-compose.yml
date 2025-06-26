@@ -11,6 +11,11 @@ services:
     networks: [ai-bridge]
     ports:               # optional – for local UI
       - "15672:15672"    # http://localhost:15672  user: ai / pass: supersecret
+      - "5672:5672"    # http://localhost:15672  user: ai / pass: supersecret
+    volumes:
+      - ./relay-service/ssl/server.crt:/etc/rabbitmq/server.crt:ro
+      - ./relay-service/ssl/server.key:/etc/rabbitmq/server.key:ro
+      - ./relay-service/ssl/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
 
   ngrok:
     image: ngrok/ngrok:latest          # ▶ multi-arch

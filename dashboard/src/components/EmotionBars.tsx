@@ -10,9 +10,15 @@ export default function EmotionBars() {
   useEffect(() => {
     const tick = async () => {
       const r = await fetch("/api/emotion");
+
       if (r.status === 200) {
         const json = await r.json();
+        console.log("🟢 new payload", json[0]);  
         setEmotions(json[0] as Emotion[]);
+      } else if (r.status === 204) {
+        console.log("🟠 Queue empty");
+      } else {
+        console.warn("⚠️ unexpected status", r.status);
       }
     };
     tick();                       // first

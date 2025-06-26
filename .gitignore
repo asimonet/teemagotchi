@@ -5,6 +5,7 @@ tmp/
 chain.json
 deployed.json
 
+*.key
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
