@@ -2,7 +2,8 @@
   "dependencies": {
     "@iexec/dataprotector": "^2.0.0-beta.16",
     "dotenv": "^16.5.0",
-    "iexec": "^8.16.0"
+    "iexec": "^8.16.0",
+    "vercel": "^44.2.6"
   },
   "name": "teemagotchi",
   "version": "1.0.0",
