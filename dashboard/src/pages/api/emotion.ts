@@ -1,68 +1,46 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node'
-import amqp from 'amqplib'
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import amqp from 'amqplib';
 
-const URL    = process.env.RABBIT_URL!     // amqps://…
-const CAB64  = process.env.RABBIT_CA!      // base64-encoded CA
-const CABUF  = Buffer.from(CAB64, 'base64')
+const url  = process.env.RABBIT_URL!;        // amqps://ai:...@host:port//
+const caB64= process.env.RABBIT_CA!;         // base64-encoded cert
+const caBuf= Buffer.from(caB64, 'base64');
 
-let conn:    amqp.Connection
-let ch:      amqp.Channel
-let recvQ:   string
+let conn: amqp.Connection | undefined;
+let ch:   amqp.Channel     | undefined;
 
 function noHostnameCheck(_hostname: string, _cert: any) {
-  return null  // disable alt-name / CN check
+  return null;                // ⬅️ disable alt-name validation only
 }
 
-async function init() {
-  if (ch) return
+async function getChannel() {
+  if (ch) return ch;
 
-  conn = await amqp.connect(URL, {
-    ca:            [CABUF],
-    servername:    '',                // skip SNI/CN mismatch
-    checkServerIdentity: noHostnameCheck,
-  })
+  conn = await amqp.connect(url, {
+    ca: [caBuf],             // trust our CA
+    servername: '',          // skip SNI, CN mismatch is OK
+    checkServerIdentity: noHostnameCheck
+    // if you prefer to disable validation entirely, add:
+    // rejectUnauthorized: false,
+  });
 
-  ch = await conn.createChannel()
-
-  // 1️⃣ Assert the existing "emotions" exchange (fanout or topic)
-  await ch.assertExchange('emotions', 'fanout', { durable: true })
-
-  // 2️⃣ Create a temporary queue for consuming replies
-  const { queue } = await ch.assertQueue('', { exclusive: true })
-  recvQ = queue
-
-  // 3️⃣ Bind it to the exchange with no routing key
-  await ch.bindQueue(recvQ, 'emotions', '')
+  ch = await conn.createChannel();
+  await ch.assertQueue('emotions', { durable: true });
+  return ch;
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  await init()
+export default async function handler(_: VercelRequest, res: VercelResponse) {
+  console.log('Polling the queue');
+  const channel = await getChannel();
+  const msg = await channel.get('emotions', { noAck: false });
 
-  if (req.method === 'GET') {
-    // Pull one message off our bound queue
-    const msg = await ch.get(recvQ, { noAck: false })
-    if (!msg) return res.status(204).end()
-
-    // Ack & return
-    ch.ack(msg)
-    const text = msg.content.toString('utf8')
-    res.setHeader('Content-Type', 'application/json')
-    res.setHeader('Cache-Control', 'no-store')
-    return res.send(JSON.stringify({ text }))
+  if (!msg) {
+    console.log("ℹ️ no message – queue empty");      // <-- LOG
+    return res.status(204).end();
   }
 
-  if (req.method === 'POST') {
-    const { text } = req.body
-    if (typeof text !== 'string') {
-      return res.status(400).json({ error: 'Missing text' })
-    }
-
-    // Publish into the "emotions" exchange
-    ch.publish('emotions', '', Buffer.from(text), { persistent: true })
-    return res.status(204).end()
-  }
-
-  // 405 for anything else
-  res.setHeader('Allow', ['GET','POST'])
-  return res.status(405).end()
+  const body = msg.content.toString('utf8');
+  channel.ack(msg);
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Cache-Control', 'no-store');
+  res.send(body);
 }
