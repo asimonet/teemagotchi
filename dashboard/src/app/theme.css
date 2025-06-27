@@ -1,0 +1,45 @@
+/* app/theme.css */
+@import "tailwindcss";          /* pulls in all Tailwind utilities */
+
+/* --- Your brand theme ------------------------- */
+@theme {
+  /* brand color (beige) */
+  --color-brand:    #FFDEC8;
+  --color-brand-10: #FFB48D;
+  --color-brand-20: #FFBA8C;
+  --color-brand-30: #FE9966;
+  --color-brand-40: #FFA060;
+  --color-brand-50: #FF8F55;
+  --color-brand-60: #FD9651;
+  --color-brand-70: #FD7C3A;
+  
+  /* accent color (purple) */
+  --color-accent:    #F6F0FC;
+  --color-accent-10: #F1E6FF;
+  --color-accent-20: #E8D6FF;
+  --color-accent-30: #CAA1FF;
+  --color-accent-50: #986BD0;
+
+  --color-pink: #FFCBD1;
+  --color-pink-10: #FFC6CD;
+  --color-pink-20: #FFBDC4;
+  --color-pink-30: #FFB5BD;
+  --color-pink-40: #FCA7AF;
+
+  --color-light:    #FBE9D1;
+  --color-light-10: #FFE6C5;
+  --color-light-20: #FEDCAF;
+  --color-light-30: #FED4A5;
+
+  --color-green-30: #87E7C4;
+
+  --color-white: #FCF9FF;
+}
+
+/* (Optional) dark theme — only loads when .dark is on <html> */
+@variant dark {
+  @theme {
+    --color-brand-50:  #0f172a;
+    --color-brand-100: #1e293b;
+  }
+}

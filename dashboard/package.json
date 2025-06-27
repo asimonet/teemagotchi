@@ -9,6 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@fontsource/quicksand": "^5.2.8",
+    "@heroicons/react": "^2.2.0",
+    "@stomp/stompjs": "^7.1.1",
     "amqplib": "^0.10.8",
     "next": "15.3.4",
     "react": "^19.0.0",
@@ -16,14 +19,17 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@tailwindcss/postcss": "^4",
+    "@tailwindcss/cli": "^4.1.11",
+    "@tailwindcss/postcss": "^4.1.11",
     "@types/amqplib": "^0.10.7",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "autoprefixer": "^10.4.21",
     "eslint": "^9",
     "eslint-config-next": "15.3.4",
-    "tailwindcss": "^4",
+    "postcss-import": "^16.1.1",
+    "tailwindcss": "^4.1.11",
     "typescript": "^5"
   }
 }
